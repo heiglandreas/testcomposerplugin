@@ -1,0 +1,33 @@
+{
+    "name": "org_heigl/testcomposerplugin",
+    "description": "No desc",
+    "type": "composer-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andreas Heigl",
+            "email": "andreas@heigl.org"
+        }
+    ],
+    "require": {
+        "composer-plugin-api": "^1.1"
+    },
+    "require-dev": {
+        "composer/composer": "^1.10",
+        "org_heigl/testcomposerplugin": "*"
+    },
+    "extra": {
+        "class": "Org_Heigl\\TestComposerPlugin\\Plugin"
+    },
+    "autoload": {
+        "psr-4": {
+            "Org_Heigl\\TestComposerPlugin\\": "src/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "."
+        }
+    ]
+}
