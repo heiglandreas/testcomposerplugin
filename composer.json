@@ -21,7 +21,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Org_Heigl\\TestComposerPlugin\\": "src/"
+            "Org_Heigl\\TestComposerPlugin\\": "src/",
+            "Phive\\ComposerPharMetaPlugin\\": "lib/"
         }
     },
     "repositories": [

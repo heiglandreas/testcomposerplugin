@@ -10,30 +10,25 @@ declare(strict_types=1);
 
 namespace Org_Heigl\TestComposerPlugin;
 
-use Closure;
 use Composer\Composer;
-use Composer\DependencyResolver\GenericRule;
-use Composer\DependencyResolver\Request;
 use Composer\EventDispatcher\EventSubscriberInterface;
-use Composer\Installer\InstallerEvent;
 use Composer\Installer\InstallerEvents;
 use Composer\Installer\PackageEvent;
 use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
-use Composer\Package\CompletePackage;
 use Composer\Plugin\PluginInterface;
-use Composer\Semver\Constraint\ConstraintInterface;
-use Composer\Semver\Constraint\MultiConstraint;
-use function get_class;
-use function var_dump;
+use Phive\ComposerPharMetaPlugin\File;
+use Phive\ComposerPharMetaPlugin\FileList;
+use Phive\ComposerPharMetaPlugin\KeyDirectory;
+use Phive\ComposerPharMetaPlugin\Service\Installer;
+use Phive\ComposerPharMetaPlugin\Url;
+use SplFileInfo;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
-    private const PLUGIN_NAME = 'org_heigl/hyphenator';
+    private const PLUGIN_NAME = 'PluginName';
 
-    private const BINARY_NAME = 'testbinary';
-
-    private const PHAR_FILE_URI = 'https://github.com/heiglandreas/Org_Heigl_Hyphenator/archive/%version%.zip';
+    private const KEY_FILE_OR_DIRECTORY = __DIR__ . '/../keys/';
 
     private $composer;
 
@@ -60,49 +55,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         ];
     }
 
-    public function preDependenciesSolving(InstallerEvent $event): void
-    {
-        $this->io->write('test');
-
-        $jobThief = Closure::bind(function & (Request $request) {
-            return $request->jobs;
-        }, null, $event->getRequest());
-
-        foreach ($event->getRequest()->getJobs() as $key => $job) {
-            if (! isset($job['packageName'])) {
-                continue;
-            }
-            if ($job['packageName'] === 'composer/composer') {
-                $jobs = & $jobThief($event->getRequest());
-                unset($jobs[$key]);
-            }
-        }
-        //$this->io->write(print_r($event->getRequest()->getJobs(), true));
-    }
-
     public function postPackageEvent(PackageEvent $event): void
     {
-        /** @var GenericRule $rule */
-        $rule = $event->getOperation()->getReason();
-        /** @var MultiConstraint $constraint */
-        $constraint = $rule->getJob()['constraint'];
-        if ($rule->getRequiredPackage() !== self::PLUGIN_NAME) {
-            return;
-        }
+        $handler = new Installer(
+            self::PLUGIN_NAME,
+            $this->io,
+            new KeyDirectory(new SplFileInfo(self::KEY_FILE_OR_DIRECTORY)),
+            $event
+        );
 
-        /** @var CompletePackage $packages */
-        $package = $event->getInstalledRepo()->findPackage($rule->getRequiredPackage(), $constraint->getPrettyString());
-        $package->getName();
-
-        $this->io->write(sprintf(
-            'downloading Artifact in version %2$s from %1$s',
-            str_replace('%version%', $package->getFullPrettyVersion(), self::PHAR_FILE_URI),
-            $package->getFullPrettyVersion()
-        ));
-
-        $this->io->write('downloading signature for PHAR-File');
-        $this->io->write('verifying PHAR-File with contained public keys');
-        $this->io->write('installing PHAR-File');
-        $this->io->write(sprintf('You can now use `./vendor/bin/%1$s` to run the package', self::BINARY_NAME));
+        $handler->install(new FileList(new File(
+            'captainhook',
+            Url::fromString('https://github.com/CaptainHookPhp/captainhook/releases/download/%version%/captainhook.phar'),
+            Url::fromString('https://github.com/CaptainHookPhp/captainhook/releases/download/%version%/captainhook.phar.asc'),
+        )));
     }
 }
