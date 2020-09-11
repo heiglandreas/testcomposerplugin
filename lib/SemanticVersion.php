@@ -11,6 +11,8 @@ declare(strict_types=1);
 namespace Phive\ComposerPharMetaPlugin;
 
 use Phive\ComposerPharMetaPlugin\Exception\NoSemanticVersioning;
+use function explode;
+use function is_numeric;
 
 final class SemanticVersion
 {
@@ -22,32 +24,52 @@ final class SemanticVersion
 
     private $build;
 
-    private function __construct(int $major, int $minor, int $patch, string $build)
+    private $preRelease;
+
+    private function __construct(int $major, int $minor, int $patch, string $preRelease, string $build)
     {
         $this->major = $major;
         $this->minor = $minor;
         $this->patch = $patch;
+        $this->preRelease = $preRelease;
         $this->build = $build;
     }
 
     public static function fromVersionString(string $versionString): self
     {
-        $a = explode('-', $versionString);
+        $originalVersionString = $versionString;
+
+        $a = explode('+', $versionString);
         $build = '';
         if (isset($a[1])) {
             $build = $a[1];
+            $versionString = $a[0];
         }
+
+        $a = explode('-', $versionString);
+        $preRelease = '';
+        if (isset($a[1])) {
+            $preRelease = $a[1];
+        }
+
 
         $b = explode('.', $a[0]);
         if (! $b) {
-            throw NoSemanticVersioning::fromversionString($versionString);
+            throw NoSemanticVersioning::fromversionString($originalVersionString);
         }
 
         if (3 !== count($b)) {
-            throw NoSemanticVersioning::fromversionString($versionString);
+            throw NoSemanticVersioning::fromversionString($originalVersionString);
         }
 
-        return new self((int) $b[0], (int) $b[1], (int) $b[2], $build);
+        foreach($b as $i) {
+            if (! is_numeric($i)) {
+                throw NoSemanticVersioning::fromversionString($originalVersionString);
+            }
+
+        }
+
+        return new self((int) $b[0], (int) $b[1], (int) $b[2], $preRelease, $build);
     }
 
     public function major(): int
@@ -63,6 +85,11 @@ final class SemanticVersion
     public function patch(): int
     {
         return $this->patch;
+    }
+
+    public function preRelease(): string
+    {
+        return $this->preRelease;
     }
 
     public function build(): string
